@@ -1,0 +1,17 @@
+spring:
+  application:
+    name: ddd-hexagonal-lab
+  datasource:
+    # Cada bounded context es dueño de su esquema (catalog, ordering) en la misma H2 en memoria.
+    # En producción serían esquemas, o bases de datos, distintos: ningún contexto lee tablas ajenas.
+    url: jdbc:h2:mem:ddd-lab;DB_CLOSE_DELAY=-1;INIT=CREATE SCHEMA IF NOT EXISTS catalog\;CREATE SCHEMA IF NOT EXISTS ordering
+  jpa:
+    # Nada de sesión JPA abierta durante la vista: la transacción empieza y acaba en el caso de uso.
+    open-in-view: false
+    hibernate:
+      ddl-auto: create-drop
+
+ordering:
+  expired-orders:
+    # Cada cuánto busca el job pedidos sin pagar fuera de plazo (ISO-8601).
+    check-interval: PT1M

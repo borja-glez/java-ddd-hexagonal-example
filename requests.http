@@ -1,0 +1,54 @@
+### Recorrido completo por el API. Se ejecuta desde IntelliJ (HTTP Client) o VS Code (REST Client).
+### Arranca antes la aplicación: ./gradlew :app:bootRun
+
+@host = http://localhost:8080
+
+### 1. Catalog (capas clásicas): los productos de demo
+GET {{host}}/products
+
+### 2. Ordering: realizar un pedido (el precio lo pone el catálogo, no el cliente)
+# @name place
+POST {{host}}/orders
+Content-Type: application/json
+
+{
+  "customerId": "ana",
+  "items": [
+    { "productId": "keyboard", "quantity": 1 },
+    { "productId": "mouse", "quantity": 2 }
+  ]
+}
+
+### 3. Consultar el pedido (lado de lectura)
+GET {{host}}/orders/{{place.response.body.orderId}}
+
+### 4. Añadir otro ratón: la línea existente suma cantidad y conserva su precio
+POST {{host}}/orders/{{place.response.body.orderId}}/lines
+Content-Type: application/json
+
+{ "productId": "mouse", "quantity": 1 }
+
+### 5. Pagar (pasa por la ACL de LegacyPay)
+POST {{host}}/orders/{{place.response.body.orderId}}/payment
+
+### 6. Enviar
+POST {{host}}/orders/{{place.response.body.orderId}}/shipment
+
+### 7. Cancelar un pedido enviado: 409 con title "OrderAlreadyShipped"
+POST {{host}}/orders/{{place.response.body.orderId}}/cancellation
+
+### 8. Value object inválido: 400 (cantidad fuera de 1..99)
+POST {{host}}/orders
+Content-Type: application/json
+
+{ "customerId": "ana", "items": [{ "productId": "keyboard", "quantity": 0 }] }
+
+### 9. Pago rechazado por LegacyPay (más de 1000 EUR): 402
+# @name expensive
+POST {{host}}/orders
+Content-Type: application/json
+
+{ "customerId": "bea", "items": [{ "productId": "monitor", "quantity": 3 }] }
+
+###
+POST {{host}}/orders/{{expensive.response.body.orderId}}/payment
